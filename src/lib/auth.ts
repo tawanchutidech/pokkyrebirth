@@ -48,3 +48,19 @@ export function canViewGuild(user: SessionUser | null, guild: Guild): boolean {
   if (user.isSuperAdmin) return true;
   return user.guildAdminRoles.includes(guild) || user.guildMemberRoles.includes(guild);
 }
+
+// Salt used to derive the daily rotating guild code. In production this
+// must stay byte-identical to the server-side copy (functions/auth/code-
+// login.js) or logins silently break — not applicable yet since there's no
+// real backend wired up (see Phase 6).
+const GUILD_SALT = "7k_IcOnYx_LgNd";
+
+export function getGuildDailyCode(guild: string, offsetDays = 0): string {
+  const d = new Date();
+  d.setDate(d.getDate() + offsetDays);
+  const pad = (n: number) => String(n).padStart(2, "0");
+  const input = `${d.getFullYear()}${pad(d.getMonth() + 1)}${pad(d.getDate())}|${guild}|${GUILD_SALT}`;
+  let h = 5381;
+  for (let i = 0; i < input.length; i++) h = ((h << 5) + h + input.charCodeAt(i)) >>> 0;
+  return String((h % 900000) + 100000);
+}

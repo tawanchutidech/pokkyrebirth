@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { GUILDS, canEditGuild, canViewGuild, getLocalDevUser, type Guild } from "@/lib/auth";
+import { AnnouncementToggle, MaintenanceToggle } from "@/components/OwnerToggles";
 
 export default function HomePage() {
   const router = useRouter();
@@ -14,6 +15,12 @@ export default function HomePage() {
 
   return (
     <main className="home-main">
+      {user.isAdminById && (
+        <>
+          <MaintenanceToggle />
+          <AnnouncementToggle />
+        </>
+      )}
       <section className="guild-picker">
         <p className="guild-picker-sub">
           สวัสดี, <span>{user.displayName}</span>
