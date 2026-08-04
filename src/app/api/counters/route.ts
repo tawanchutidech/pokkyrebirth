@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { kvGet, kvSet } from "@/server/mockKv";
-import { toView, type CounterEntry } from "@/data/counters";
+import { toView, type CounterEntry, type HeroGear } from "@/data/counters";
 
 function key(guild: string, comp: string) {
   return `counters:${guild}:${comp}`;
@@ -25,7 +25,7 @@ export async function POST(request: NextRequest) {
   const { guild, comp, counter, userId, userName, isAdmin } = body as {
     guild: string;
     comp: string;
-    counter: { name: string; heroes: (string | null)[]; pet: string | null; note: string };
+    counter: { name: string; heroes: (string | null)[]; pet: string | null; note: string; gear?: Record<string, HeroGear> };
     userId: string;
     userName: string;
     isAdmin: boolean;
@@ -40,6 +40,7 @@ export async function POST(request: NextRequest) {
     name: counter.name || "ทีมตอบโต้",
     heroes: counter.heroes,
     pet: counter.pet,
+    gear: counter.gear || {},
     note: counter.note || "",
     status: isAdmin ? "published" : "pending",
     submittedBy: userId,

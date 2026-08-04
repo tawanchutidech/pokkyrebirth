@@ -4,10 +4,124 @@ import { Suspense, useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { HEROES, HERO_TIERS, getHero, heroEffectiveTier, heroMatchesQuery, type ElementId } from "@/data/heroes";
 import { PETS, getPet } from "@/data/pets";
+import { RINGS, EQUIPMENT_SETS, getRing, getEquipmentSet, ringMatchesQuery } from "@/data/gear";
 import { canViewGuild, getLocalDevUser, type Guild } from "@/lib/auth";
-import type { CounterEntryView, VoteType } from "@/data/counters";
+import type { CounterEntryView, HeroGear, VoteType } from "@/data/counters";
 import { ElementFilterRow } from "@/components/HeroChip";
 import { useToast } from "@/components/Toast";
+
+const EMPTY_GEAR: HeroGear = { rings: {}, sets: {} };
+
+function GearSlotRow({
+  label,
+  slots,
+  itemLookup,
+  onPick,
+  onRemove,
+}: {
+  label: string;
+  slots: [string, string | null][];
+  itemLookup: (id: string) => { img: string; name: string } | null;
+  onPick: (slotNum: string) => void;
+  onRemove: (slotNum: string) => void;
+}) {
+  return (
+    <div className="gear-type-row">
+      <span className="gear-type-label">{label}</span>
+      <div className="gear-slots-grid">
+        {slots.map(([slotNum, itemId]) => {
+          const item = itemId ? itemLookup(itemId) : null;
+          return (
+            <div key={slotNum} className={`gear-slot${item ? " filled" : " empty"}`} onClick={() => (item ? undefined : onPick(slotNum))}>
+              {item ? (
+                <>
+                  <img src={item.img} alt={item.name} loading="lazy" />
+                  <button
+                    className="gear-slot-remove"
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onRemove(slotNum);
+                    }}
+                  >
+                    ×
+                  </button>
+                </>
+              ) : (
+                <span className="slot-plus">+</span>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+function HeroGearBlock({
+  heroId,
+  gear,
+  onChange,
+}: {
+  heroId: string;
+  gear: HeroGear;
+  onChange: (next: HeroGear) => void;
+}) {
+  const hero = getHero(heroId)!;
+  const [picker, setPicker] = useState<{ kind: "ring" | "set"; slotNum: string } | null>(null);
+  const [query, setQuery] = useState("");
+
+  function pickItem(id: string) {
+    if (!picker) return;
+    const key = picker.kind === "ring" ? "rings" : "sets";
+    onChange({ ...gear, [key]: { ...gear[key], [picker.slotNum]: id } });
+    setPicker(null);
+    setQuery("");
+  }
+
+  function removeItem(kind: "ring" | "set", slotNum: string) {
+    const key = kind === "ring" ? "rings" : "sets";
+    onChange({ ...gear, [key]: { ...gear[key], [slotNum]: null } });
+  }
+
+  const ringSlots: [string, string | null][] = ["1", "2", "3"].map((n) => [n, gear.rings[n] ?? null]);
+  const setSlots: [string, string | null][] = ["1", "2", "3"].map((n) => [n, gear.sets[n] ?? null]);
+
+  return (
+    <div className="hero-gear-block">
+      <div className="hero-gear-row">
+        <div className="hero-gear-left">
+          <div className="hero-gear-portrait">
+            <img src={hero.img} alt={hero.name} loading="lazy" />
+          </div>
+          <div className="hero-gear-slots">
+            <GearSlotRow label="แหวน" slots={ringSlots} itemLookup={getRing} onPick={(n) => setPicker({ kind: "ring", slotNum: n })} onRemove={(n) => removeItem("ring", n)} />
+            <GearSlotRow label="เซ็ต" slots={setSlots} itemLookup={getEquipmentSet} onPick={(n) => setPicker({ kind: "set", slotNum: n })} onRemove={(n) => removeItem("set", n)} />
+          </div>
+        </div>
+      </div>
+      {picker && (
+        <div className="gear-picker-inline">
+          <div className="search-bar">
+            <span>🔍</span>
+            <input placeholder="ค้นหา..." value={query} onChange={(e) => setQuery(e.target.value)} autoFocus />
+            <button className="dp-close-btn" type="button" onClick={() => setPicker(null)}>
+              ×
+            </button>
+          </div>
+          <div className="hero-grid" style={{ maxHeight: 180 }}>
+            {(picker.kind === "ring" ? RINGS.filter((r) => ringMatchesQuery(r, query)) : EQUIPMENT_SETS.filter((s) => s.name.toLowerCase().includes(query.trim().toLowerCase()))).map((item) => (
+              <button key={item.id} type="button" className="hero-chip" onClick={() => pickItem(item.id)}>
+                <img src={item.img} alt={item.name} loading="lazy" />
+                <span>{item.name}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
 
 const ELEMENT_ICON: Record<ElementId, string> = {
   light: "/public/element/Light.webp",
@@ -48,6 +162,8 @@ function CounterPageInner() {
   const [note, setNote] = useState("");
   const [heroes, setHeroes] = useState<(string | null)[]>([null, null, null]);
   const [pet, setPet] = useState<string | null>(null);
+  const [gear, setGear] = useState<Record<string, HeroGear>>({});
+  const [expandedGearId, setExpandedGearId] = useState<string | null>(null);
   const [pendingSlot, setPendingSlot] = useState<{ index: number; kind: "hero" | "pet" } | null>({ index: 0, kind: "hero" });
   const [query, setQuery] = useState("");
   const [elementFilter, setElementFilter] = useState<ElementId | null>(null);
@@ -111,6 +227,7 @@ function CounterPageInner() {
     setNote("");
     setHeroes([null, null, null]);
     setPet(null);
+    setGear({});
     setPendingSlot({ index: 0, kind: "hero" });
     setShowEditor(true);
   }
@@ -139,7 +256,7 @@ function CounterPageInner() {
       body: JSON.stringify({
         guild,
         comp,
-        counter: { name: name || "ทีมตอบโต้", heroes, pet, note },
+        counter: { name: name || "ทีมตอบโต้", heroes, pet, gear, note },
         userId: user.userId,
         userName: user.displayName,
         isAdmin: !user.isCodeLogin,
@@ -206,6 +323,35 @@ function CounterPageInner() {
                     {c.pet && <img className="saved-team-pet" src={getPet(c.pet)?.img} alt="" loading="lazy" />}
                   </div>
                   {c.note && <div className="counter-card-note">{c.note}</div>}
+                  {Object.keys(c.gear || {}).length > 0 && (
+                    <button className="view-more-btn" type="button" style={{ padding: "0 14px 10px" }} onClick={() => setExpandedGearId((cur) => (cur === c.id ? null : c.id))}>
+                      {expandedGearId === c.id ? "ซ่อนอุปกรณ์" : "ดูอุปกรณ์ ›"}
+                    </button>
+                  )}
+                  {expandedGearId === c.id && (
+                    <div className="hero-gear-section">
+                      {c.heroes.filter(Boolean).map((heroId) => {
+                        const g = c.gear?.[heroId as string] || EMPTY_GEAR;
+                        const hero = getHero(heroId as string);
+                        if (!hero) return null;
+                        return (
+                          <div className="hero-gear-block" key={heroId}>
+                            <div className="hero-gear-row">
+                              <div className="hero-gear-left">
+                                <div className="hero-gear-portrait">
+                                  <img src={hero.img} alt={hero.name} loading="lazy" />
+                                </div>
+                                <div className="hero-gear-slots">
+                                  <GearSlotRow label="แหวน" slots={["1", "2", "3"].map((n) => [n, g.rings[n] ?? null])} itemLookup={getRing} onPick={() => {}} onRemove={() => {}} />
+                                  <GearSlotRow label="เซ็ต" slots={["1", "2", "3"].map((n) => [n, g.sets[n] ?? null])} itemLookup={getEquipmentSet} onPick={() => {}} onRemove={() => {}} />
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
                   <div className="card-footer">
                     <div className="counter-vote-row" style={{ marginRight: "auto" }}>
                       <button className={`vote-btn${c.myVote === "like" ? " voted" : ""}`} type="button" onClick={() => vote(c.id, "like")}>
@@ -280,6 +426,22 @@ function CounterPageInner() {
                     </div>
                   </div>
                 </div>
+
+                {heroes.every(Boolean) && (
+                  <>
+                    <div className="counter-editor-section-title">อุปกรณ์ &amp; รายละเอียด</div>
+                    <div className="hero-gear-section">
+                      {heroes.map((heroId) => (
+                        <HeroGearBlock
+                          key={heroId}
+                          heroId={heroId as string}
+                          gear={gear[heroId as string] || EMPTY_GEAR}
+                          onChange={(next) => setGear((g) => ({ ...g, [heroId as string]: next }))}
+                        />
+                      ))}
+                    </div>
+                  </>
+                )}
 
                 <div className="counter-team-note-section">
                   <label className="counter-team-note-label">สรุปรายละเอียดทีม</label>

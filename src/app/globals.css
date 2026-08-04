@@ -1492,6 +1492,117 @@ textarea {
   flex-wrap: wrap;
 }
 
+/* Per-hero gear (rings/equipment-sets) */
+.hero-gear-section {
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid var(--card-border);
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+.hero-gear-block {
+  padding: 10px 0;
+  border-bottom: 1px solid var(--card-border);
+}
+.hero-gear-block:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+.hero-gear-row {
+  display: flex;
+  gap: 20px;
+  align-items: stretch;
+}
+.hero-gear-left {
+  flex: 1;
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+.hero-gear-portrait img {
+  width: 64px;
+  height: 64px;
+  border-radius: 10px;
+  object-fit: cover;
+  border: 2px solid var(--accent);
+  flex-shrink: 0;
+}
+.hero-gear-slots {
+  flex: 0 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.gear-type-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.gear-type-label {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--muted);
+  width: 40px;
+  flex-shrink: 0;
+}
+.gear-slots-grid {
+  display: flex;
+  gap: 6px;
+}
+.gear-slot {
+  position: relative;
+  width: 52px;
+  height: 52px;
+  border-radius: 10px;
+  border: 2px dashed var(--card-border);
+  background: var(--bg-page);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+.gear-slot.filled {
+  border-style: solid;
+  border-color: var(--accent);
+}
+.gear-slot img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.gear-slot .slot-plus {
+  color: var(--muted);
+  font-size: 18px;
+}
+.gear-slot-remove {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #ef4444;
+  color: #fff;
+  border: none;
+  font-size: 11px;
+  line-height: 1;
+  cursor: pointer;
+  z-index: 3;
+}
+.gear-picker-inline {
+  margin-top: 10px;
+  padding: 10px;
+  border: 1px solid var(--card-border);
+  border-radius: 12px;
+  background: var(--bg-page);
+}
+.gear-picker-inline .search-bar {
+  margin-bottom: 8px;
+}
+
 /* Ranking page */
 .ranking-main {
   flex: 1;
