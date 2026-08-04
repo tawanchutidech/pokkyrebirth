@@ -22,12 +22,20 @@ export type CounterEntry = {
   likes: number;
   dislikes: number;
   votes: Record<string, VoteType>; // userId -> vote, server-side bookkeeping
+  // Idempotency guards for point-awarding (see src/server/ranking.ts) --
+  // separate from `votes` because toggling a vote off and back on must not
+  // re-trigger the one-time "voted on this counter" bonus.
+  voteBonusGiven: string[]; // userIds already paid their +1 for voting here
+  likeBonusGiven: string[]; // userIds already paid the submitter's +2 for liking
 };
 
-// Client-safe view: strips the full votes map down to just this viewer's own vote.
-export type CounterEntryView = Omit<CounterEntry, "votes"> & { myVote: VoteType | null };
+// Client-safe view: strips server-only bookkeeping (the full votes map,
+// bonus-idempotency guards) down to just this viewer's own vote.
+export type CounterEntryView = Omit<CounterEntry, "votes" | "voteBonusGiven" | "likeBonusGiven"> & {
+  myVote: VoteType | null;
+};
 
 export function toView(entry: CounterEntry, userId: string): CounterEntryView {
-  const { votes, ...rest } = entry;
+  const { votes, voteBonusGiven, likeBonusGiven, ...rest } = entry;
   return { ...rest, myVote: votes[userId] ?? null };
 }

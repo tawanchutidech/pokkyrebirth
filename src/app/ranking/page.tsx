@@ -45,7 +45,7 @@ function RankingPageInner() {
         setList([]);
       }
       try {
-        const res = await fetch("/api/ranking/log");
+        const res = await fetch(`/api/ranking/log?userId=${encodeURIComponent(user.userId)}`);
         setLog(res.ok ? await res.json() : []);
       } catch {
         setLog([]);

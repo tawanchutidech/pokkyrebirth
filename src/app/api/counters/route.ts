@@ -49,6 +49,8 @@ export async function POST(request: NextRequest) {
     likes: 0,
     dislikes: 0,
     votes: {},
+    voteBonusGiven: [],
+    likeBonusGiven: [],
   };
   entries.push(entry);
   kvSet(key(guild, comp), entries);

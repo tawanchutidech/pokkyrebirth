@@ -1,9 +1,9 @@
-import { NextResponse } from "next/server";
-import type { RankingLogEntry } from "@/data/ranking";
+import { NextRequest, NextResponse } from "next/server";
+import { getRankingRecord } from "@/server/ranking";
 
-// Same scope note as /api/ranking/data — no real point-awarding system
-// wired up yet, so every viewer's log is empty for now.
-export async function GET() {
-  const log: RankingLogEntry[] = [];
-  return NextResponse.json(log);
+export async function GET(request: NextRequest) {
+  const userId = request.nextUrl.searchParams.get("userId");
+  if (!userId) return NextResponse.json([]);
+  const record = getRankingRecord(userId);
+  return NextResponse.json(record?.log ?? []);
 }

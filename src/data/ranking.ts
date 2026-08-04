@@ -23,6 +23,11 @@ const RANK_THRESHOLDS = [
   { tier: 7, points: 250 }, { tier: 8, points: 100 }, { tier: 9, points: 0 },
 ];
 
+export function pointsToTier(points: number): number {
+  const hit = RANK_THRESHOLDS.find((t) => points >= t.points);
+  return hit ? hit.tier : 9;
+}
+
 export function computeProgress(points: number, tier: number) {
   if (tier <= 1) return null; // already maxed out
   const current = RANK_THRESHOLDS.find((t) => t.tier === tier)!;

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { kvGet, kvSet } from "@/server/mockKv";
 import type { CounterEntry, VoteType } from "@/data/counters";
+import { awardPoints } from "@/server/ranking";
 
 function key(guild: string, comp: string) {
   return `counters:${guild}:${comp}`;
@@ -8,12 +9,13 @@ function key(guild: string, comp: string) {
 
 export async function POST(request: NextRequest) {
   const body = await request.json();
-  const { guild, comp, counterId, voteType, userId } = body as {
+  const { guild, comp, counterId, voteType, userId, userName } = body as {
     guild: string;
     comp: string;
     counterId: string;
     voteType: VoteType;
     userId: string;
+    userName?: string;
   };
   if (!guild || !comp || !counterId || !userId) {
     return NextResponse.json({ error: "missing fields" }, { status: 400 });
@@ -34,6 +36,19 @@ export async function POST(request: NextRequest) {
 
   if (nextVote) entry.votes[userId] = nextVote;
   else delete entry.votes[userId];
+
+  // +1 to the voter, first time only per counter (survives later toggling).
+  if (!entry.voteBonusGiven.includes(userId)) {
+    entry.voteBonusGiven.push(userId);
+    awardPoints(userId, userName || "", 1, `โหวตทีมตอบโต้ "${entry.name}"`);
+  }
+
+  // +2 to the submitter, once per unique person who likes it (not dislikes,
+  // and not re-paid if a like is toggled off and back on).
+  if (nextVote === "like" && !entry.likeBonusGiven.includes(userId) && userId !== entry.submittedBy) {
+    entry.likeBonusGiven.push(userId);
+    awardPoints(entry.submittedBy, entry.submittedByName, 2, `มีคนกด 👍 ทีมตอบโต้ "${entry.name}" ของคุณ`);
+  }
 
   kvSet(key(guild, comp), entries);
   return NextResponse.json({ likes: entry.likes, dislikes: entry.dislikes, myVote: nextVote });

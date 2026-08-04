@@ -197,7 +197,7 @@ function CounterPageInner() {
     const res = await fetch("/api/counters/vote", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ guild, comp, counterId, voteType, userId: user.userId }),
+      body: JSON.stringify({ guild, comp, counterId, voteType, userId: user.userId, userName: user.displayName }),
     });
     if (!res.ok) {
       show("โหวตไม่สำเร็จ");
