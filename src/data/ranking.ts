@@ -50,3 +50,33 @@ export type RankingUser = {
 };
 
 export type RankingLogEntry = { delta: number; reason: string; at: number };
+
+// Character art dropped into public/ranking-collection/ — cumulative:
+// reaching a tier keeps every lower tier's unlock and adds this tier's
+// character(s). Tier 8 has no dedicated art, so it carries tier 9's roster
+// forward unchanged.
+export const TIER_COLLECTION: Record<number, string[]> = {
+  9: ["evan", "karin"],
+  8: [],
+  7: ["yuri"],
+  6: ["ryan"],
+  5: ["velika"],
+  4: ["spike", "jave"],
+  3: ["eileene", "rachel"],
+  2: ["kris"],
+  1: ["dellons", "rudy"],
+};
+
+export function unlockedCharacters(tier: number): string[] {
+  const names: string[] = [];
+  for (let t = 9; t >= tier; t--) names.push(...TIER_COLLECTION[t]);
+  return names;
+}
+
+// evan is unlocked from tier 9 (everyone has it), so this never shows a
+// character the viewer hasn't actually earned.
+export const DEFAULT_CHARACTER = "evan";
+
+export const ANNOUNCEMENT_URL =
+  "https://docs.google.com/document/d/1ya16_qESCE7ll3b7kxtYlmGlJfgyL7NMqWVbpZC8rSI/edit?usp=sharing";
+export const ANNOUNCEMENT_SEEN_KEY = "announcement_seen_v1";

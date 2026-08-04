@@ -39,7 +39,7 @@ function RankingPageInner() {
     }
     (async () => {
       try {
-        const res = await fetch("/api/ranking/data");
+        const res = await fetch(`/api/ranking/data?userId=${encodeURIComponent(user.userId)}`);
         setList(res.ok ? await res.json() : []);
       } catch {
         setList([]);

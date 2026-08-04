@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import SiteHeader from "@/components/SiteHeader";
+import RankMascot from "@/components/RankMascot";
 
 export const metadata: Metadata = {
   title: "TDERM Guild War Hub",
@@ -37,6 +38,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
             </div>
           </footer>
         </div>
+        <RankMascot />
       </body>
     </html>
   );
