@@ -38,6 +38,9 @@ export default function HomePage() {
             </button>
           ))}
         </div>
+        <button className="btn" type="button" style={{ marginTop: 16 }} onClick={() => router.push("/imported-teams")}>
+          ทีมที่นำเข้า (PokkyRebirth) ›
+        </button>
       </section>
     </main>
   );
